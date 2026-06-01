@@ -1,0 +1,6 @@
+{
+  "name": "Elixir Skincare",
+  "description": "A premium Japanese skincare brand platform showcasing the Tsuyadama philosophy, innovative collagen science, curated luxury products, an interactive skin concierge ritual quiz, and full shopping bag capabilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

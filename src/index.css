@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-skincare-cream: #FAF7F2; /* Aura / Botanica Warm Linen Cream CSS variable */
+  --color-skincare-gold: #A48B70;  /* Artistic Earth Ochre / Terracotta-Gold CSS variable */
+  --color-skincare-text: #2D362E;  /* Poetic Charcoal / Deep Forest Carbon CSS variable */
+  --color-skincare-clay: #EBE4D9;  /* Soft Warm Crafted Hand-made Paper CSS variable */
+  --color-skincare-bronze: #5C635D; /* Muted Sage-Bronze / Forest Grey CSS variable */
+  --color-skincare-mist: #ECE6DC;  /* Soft Humid Mist / Wet Clay CSS variable */
+  
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-draw-line: draw-line 1s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+body {
+  background-color: var(--color-skincare-cream);
+  color: var(--color-skincare-text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Elegant scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-skincare-cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-skincare-gold);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-skincare-bronze);
+}
+
