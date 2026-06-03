@@ -22,6 +22,9 @@ import {
   FileText, 
   Eye, 
   ChevronRight,
+  ChevronLeft,
+  X,
+  Maximize2,
   ThumbsUp,
   User,
   AlertCircle
@@ -48,6 +51,10 @@ export default function ProductDetailPage({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [activeReviewTab, setActiveReviewTab] = useState<"all" | "high" | "low">("all");
   
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   // Local review state initialization based on database
   const [localReviews, setLocalReviews] = useState<Review[]>([]);
   
@@ -59,7 +66,50 @@ export default function ProductDetailPage({
   const [newReviewSkinType, setNewReviewSkinType] = useState("Dry, Loss of Firmness");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Sync reviews when the product changes
+  // Curated premium gallery images corresponding to clinical Tokyo laboratories
+  const galleryImages = useMemo(() => {
+    const backups: Record<string, string[]> = {
+      "day-care-revolution": [
+        "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1000&auto=format&fit=crop", // Main product SPF
+        "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?q=80&w=1000&auto=format&fit=crop", // Cream lotion texture closeup
+        "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?q=80&w=1000&auto=format&fit=crop", // Luxury setting arrangement
+        "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=1000&auto=format&fit=crop"  // Ritual skin model
+      ],
+      "the-serum": [
+        "https://images.unsplash.com/photo-1526947425960-945c6e72858f?q=80&w=1000&auto=format&fit=crop", // Main serum bottle
+        "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?q=80&w=1000&auto=format&fit=crop", // Transparent fluid dropper glow
+        "https://images.unsplash.com/photo-1554372562-ff5184355a73?q=80&w=1000&auto=format&fit=crop", // Scientific molecular testing
+        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000&auto=format&fit=crop"  // Lab vials setting
+      ],
+      "total-v-cream": [
+        "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?q=80&w=1000&auto=format&fit=crop", // Main Jar
+        "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?q=80&w=1000&auto=format&fit=crop", // Whipped silk cream swatch
+        "https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000&auto=format&fit=crop", // Botanical extraction
+        "https://images.unsplash.com/photo-1601049541549-0639918731d1?q=80&w=1000&auto=format&fit=crop"  // Soft light golden aesthetic
+      ],
+      "moisture-balancing-toner": [
+        "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=1000&auto=format&fit=crop", // Main toner
+        "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?q=80&w=1000&auto=format&fit=crop", // Lotion swatch
+        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000&auto=format&fit=crop", // Clinical glass bottles
+        "https://images.unsplash.com/photo-1508759073847-9ca702cec7d2?q=80&w=1000&auto=format&fit=crop"  // Purified laboratory water splash
+      ],
+      "pearl-radiance-mask": [
+        "https://images.unsplash.com/photo-1590156546746-c23702224744?q=80&w=1000&auto=format&fit=crop", // Main mask packaging
+        "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?q=80&w=1000&auto=format&fit=crop", // Hydration paste texture
+        "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?q=80&w=1000&auto=format&fit=crop", // Marine luxury pearl layout
+        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000&auto=format&fit=crop"  // Collagen research vials
+      ]
+    };
+
+    return backups[product.id] || [
+      product.image,
+      "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=1000&auto=format&fit=crop"
+    ];
+  }, [product]);
+
+  // Sync reviews and active photo when the product changes
   useEffect(() => {
     const defaultReviews = REVIEWS[product.id] || [];
     setLocalReviews(defaultReviews);
@@ -70,7 +120,26 @@ export default function ProductDetailPage({
     setNewReviewName("");
     setNewReviewRating(5);
     setNewReviewComment("");
+    setActiveImageIndex(0);
   }, [product]);
+
+  // Keyboard navigation support for fullscreen lightbox modal
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsLightboxOpen(false);
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev + 1) % galleryImages.length);
+      } else if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, galleryImages.length]);
 
   // Adjust buy quantity
   const handleQtyAdjust = (type: "up" | "down") => {
@@ -164,35 +233,87 @@ export default function ProductDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
           
           {/* LEFT COLUMN: Luxurious Product Image Canvas & Physical Locations */}
-          <div className="lg:col-span-6 space-y-8">
+          <div className="lg:col-span-6 space-y-6">
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="aspect-square md:aspect-4/5 w-full bg-skincare-mist border border-skincare-text/10 rounded-2xl overflow-hidden relative shadow-sm group"
             >
-              <img 
-                src={product.image} 
-                alt={product.name} 
-                referrerPolicy="no-referrer"
-                className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-103"
-              />
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={activeImageIndex}
+                  src={galleryImages[activeImageIndex]} 
+                  alt={`${product.name} aspect ${activeImageIndex}`} 
+                  referrerPolicy="no-referrer"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full w-full object-cover"
+                />
+              </AnimatePresence>
               
+              {/* Overlay hover effect - Explore luster details */}
+              <div 
+                className="absolute inset-0 bg-skincare-text/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
+                onClick={() => {
+                  setIsLightboxOpen(true);
+                  setLightboxIndex(activeImageIndex);
+                }}
+              >
+                <div className="bg-white/95 text-skincare-text text-[10px] font-mono tracking-widest uppercase px-4.5 py-2.5 rounded-full shadow-lg flex items-center gap-2 transform translate-y-3 group-hover:translate-y-0 transition-all duration-300 font-bold">
+                  <Maximize2 className="h-3.5 w-3.5 text-skincare-gold" />
+                  EXPLORE TSUYADAMA REFLECTION
+                </div>
+              </div>
+
               {/* Product branding branch overlay badge */}
               {product.branch && (
-                <div className="absolute top-5 left-5 z-10 bg-skincare-text/90 backdrop-blur-md text-white border border-[#3E342B]/40 text-[9px] font-mono tracking-widest uppercase px-4 py-1.5 rounded-full shadow-md">
+                <div className="absolute top-5 left-5 z-10 bg-skincare-text/90 backdrop-blur-md text-white border border-[#3E342B]/40 text-[9px] font-mono tracking-widest uppercase px-4 py-1.5 rounded-full shadow-md select-none">
                   {product.branch}
                 </div>
               )}
 
               {/* Status active stamp tags */}
               {product.tag && (
-                <div className="absolute bottom-5 right-5 z-10 bg-skincare-gold text-white text-[9px] font-mono tracking-wider uppercase px-3 py-1.2 rounded-md shadow-md flex items-center gap-1.5 font-bold">
+                <div className="absolute bottom-5 right-5 z-10 bg-skincare-gold text-white text-[9px] font-mono tracking-wider uppercase px-3 py-1.2 rounded-md shadow-md flex items-center gap-1.5 font-bold select-none">
                   <Sparkles className="h-3 w-3" />
                   {product.tag}
                 </div>
               )}
             </motion.div>
+
+            {/* Micro thumbnail slider track index */}
+            <div className="grid grid-cols-4 gap-3">
+              {galleryImages.map((imgUrl, idx) => {
+                const isSelected = activeImageIndex === idx;
+                const sectionNames = ["Package", "Texture", "Science", "Ritual"];
+                return (
+                  <button
+                    key={idx}
+                    id={`thumb-btn-${idx}`}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`aspect-square rounded-xl overflow-hidden border-2 relative transition-all duration-300 group/thumb cursor-pointer focus:outline-none ${
+                      isSelected 
+                        ? "border-skincare-gold shadow-sm scale-102" 
+                        : "border-skincare-text/10 hover:border-skincare-gold/50"
+                    }`}
+                    aria-label={`View ${sectionNames[idx]} image`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`${product.name} thumbnail ${idx + 1}`}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover/thumb:scale-105"
+                    />
+                    <div className="absolute bottom-1 right-1 text-[8px] font-mono text-white bg-black/55 px-1.2 py-0.2 rounded leading-none select-none">
+                      0{idx + 1}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Scientific skin-membrane compliance guarantee signature */}
             <div className="bg-white border border-skincare-text/10 p-5 rounded-2xl shadow-3xs space-y-2.5">
@@ -792,6 +913,150 @@ export default function ProductDetailPage({
         )}
 
       </div>
+
+      {/* LUXURIOUS METICULOUS SCALED LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <motion.div
+            id="skincare-lightbox-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-[#0c0a09]/95 backdrop-blur-md flex flex-col justify-between p-6 md:p-10 select-none"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            {/* Top Control Bar with metadata information */}
+            <div 
+              className="flex items-center justify-between border-b border-white/5 pb-4 md:pb-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-0.5">
+                <span className="text-[10px] uppercase font-mono tracking-[0.25em] text-skincare-gold font-bold">
+                  Tsuyadama Luster Diagnostics
+                </span>
+                <h4 className="font-serif text-sm font-light text-white tracking-wide">
+                  {product.name} — Detailed Reflection
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <div className="text-xs font-mono text-white/50 tracking-widest hidden sm:block">
+                  IMAGE <span className="text-white font-bold">0{lightboxIndex + 1}</span> OF 0{galleryImages.length}
+                </div>
+                
+                <button
+                  id="lightbox-close-btn"
+                  onClick={() => setIsLightboxOpen(false)}
+                  className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors duration-200 cursor-pointer focus:outline-none"
+                  aria-label="Close Lightbox"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Main Stage with Carousel Navigators */}
+            <div className="flex-1 my-4 md:my-8 flex items-center justify-between gap-4 max-w-6xl mx-auto w-full relative">
+              {/* Prev Button */}
+              <button
+                id="lightbox-prev-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+                }}
+                className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center text-white bg-white/5 hover:bg-white/10 hover:border-white/35 active:scale-95 transition-all duration-200 shrink-0 cursor-pointer focus:outline-none"
+                aria-label="Previous Image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+
+              {/* High-res Image Wrapper with Smooth Directional Fade */}
+              <div 
+                className="h-full max-h-[55vh] md:max-h-[65vh] flex-1 flex flex-col justify-center items-center relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={lightboxIndex}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="h-full w-full relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-stone-900"
+                  >
+                    <img
+                      src={galleryImages[lightboxIndex]}
+                      alt={`${product.name} high-definition details view - ${lightboxIndex}`}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-contain"
+                    />
+                    
+                    {/* Active Stamp indicator inside lightbox */}
+                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-md text-[9px] font-mono tracking-widest text-skincare-gold font-bold">
+                      {["01 / PRODUCT PACKAGE", "02 / COHESIVE TEXTURE", "03 / MOLECULAR SCIENCE", "04 / RITUAL APPLICATION"][lightboxIndex]}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Next Button */}
+              <button
+                id="lightbox-next-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex((prev) => (prev + 1) % galleryImages.length);
+                }}
+                className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center text-white bg-white/5 hover:bg-white/10 hover:border-white/35 active:scale-95 transition-all duration-200 shrink-0 cursor-pointer focus:outline-none"
+                aria-label="Next Image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Bottom active thumbnails panel */}
+            <div 
+              className="border-t border-white/5 pt-4 md:pt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-[10px] font-mono tracking-widest text-white/40 uppercase text-center sm:text-left self-center sm:self-auto font-bold">
+                Interactive Dermal Registry Index
+              </p>
+
+              <div className="flex gap-2.5 overflow-x-auto max-w-full justify-center p-1">
+                {galleryImages.map((imgUrl, idx) => {
+                  const isFocused = lightboxIndex === idx;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`h-12 md:h-14 aspect-square rounded-lg overflow-hidden border-2 transition-all duration-300 relative cursor-pointer focus:outline-none shrink-0 ${
+                        isFocused 
+                          ? "border-skincare-gold scale-103 shadow-inner" 
+                          : "border-white/10 opacity-50 hover:opacity-100 hover:border-white/20"
+                      }`}
+                      aria-label={`Focus image ${idx + 1}`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Navigation thumbnail ${idx + 1}`}
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full object-cover"
+                      />
+                      {/* Active tag micro dots */}
+                      {isFocused && (
+                        <div className="absolute inset-0 bg-skincare-gold/10 flex items-end justify-center pb-0.5">
+                          <span className="h-1 w-1 rounded-full bg-skincare-gold" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
